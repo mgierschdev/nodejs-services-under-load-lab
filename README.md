@@ -353,3 +353,7 @@ flowchart LR
   good --> worker[Worker thread CPU execution]
   worker --> responsive[Event loop remains responsive]
 ```
+
+## License
+
+MIT. See [LICENSE](./LICENSE).
