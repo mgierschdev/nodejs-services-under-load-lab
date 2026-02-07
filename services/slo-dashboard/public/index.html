@@ -1,0 +1,1471 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SLO Dashboard</title>
+    <style>
+      :root {
+        --bg: #f4f7fb;
+        --card: #ffffff;
+        --text: #102a43;
+        --muted: #5c677d;
+        --accent: #0b7285;
+        --danger: #d62828;
+        --ok: #2b9348;
+        --warn: #ff9f1c;
+        --border: #d9e2ec;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: radial-gradient(circle at top right, #d9f0ff, #f4f7fb 52%);
+        color: var(--text);
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        min-height: 100vh;
+      }
+
+      .container {
+        width: min(1340px, 96%);
+        margin: 24px auto 40px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .definitions {
+        margin-top: 16px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 8px 20px rgba(16, 42, 67, 0.05);
+      }
+
+      .formulas {
+        margin-top: 14px;
+      }
+
+      .formula-grid {
+        margin-top: 10px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+
+      .formula-item {
+        border: 1px dashed var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        background: #fbfdff;
+      }
+
+      .formula-item strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .metrics {
+        margin-top: 14px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      }
+
+      .metric-value {
+        display: block;
+        font-size: 1.5rem;
+        margin-top: 6px;
+        font-weight: 700;
+      }
+
+      .slo-grid {
+        margin-top: 14px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+
+      .status {
+        margin-top: 8px;
+        display: inline-block;
+        font-size: 0.9rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+      }
+
+      .status.pass {
+        color: var(--ok);
+        background: rgba(43, 147, 72, 0.12);
+        border-color: rgba(43, 147, 72, 0.35);
+      }
+
+      .status.fail {
+        color: var(--danger);
+        background: rgba(214, 40, 40, 0.12);
+        border-color: rgba(214, 40, 40, 0.3);
+      }
+
+      .scenario-buttons {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .scenario-btn {
+        border: 1px solid var(--accent);
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--accent);
+        font-weight: 700;
+        padding: 9px 14px;
+        cursor: pointer;
+      }
+
+      .scenario-btn:hover {
+        background: var(--accent);
+        color: #ffffff;
+      }
+
+      .scenario-btn.active {
+        border-color: var(--ok);
+        color: var(--ok);
+        background: rgba(43, 147, 72, 0.1);
+      }
+
+      .scenario-btn.pending {
+        opacity: 0.6;
+        cursor: progress;
+      }
+
+      .scenario-details {
+        margin-top: 12px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .scenario-text-box {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 10px;
+        background: #f9fcff;
+      }
+
+      .scenario-explanations {
+        margin: 6px 0 0;
+        padding-left: 16px;
+        color: var(--text);
+      }
+
+      .topology-controls {
+        margin-top: 12px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        align-items: end;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .control-group label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      select,
+      input[type="color"] {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px;
+        background: #fff;
+        color: var(--text);
+      }
+
+      .legend {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: 0.8rem;
+        background: #fff;
+      }
+
+      .legend-swatch {
+        width: 12px;
+        height: 12px;
+        border-radius: 999px;
+        border: 1px solid rgba(0, 0, 0, 0.2);
+      }
+
+      .ingress-grid {
+        margin-top: 10px;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      }
+
+      .ingress-item {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 8px 10px;
+        background: #fbfdff;
+      }
+
+      #topologySvg {
+        margin-top: 12px;
+        width: 100%;
+        min-height: 760px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: linear-gradient(155deg, #fcfdff, #f8fbff);
+      }
+
+      .charts {
+        margin-top: 16px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      }
+
+      .footer {
+        margin-top: 12px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      code {
+        background: #e9eff5;
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
+
+      @media (max-width: 980px) {
+        .scenario-details {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Deal Experience SLO Dashboard</h1>
+      <p>Refresh interval: 2 seconds. Data source: <code>/metrics</code> from experience-api.</p>
+
+      <section class="definitions">
+        <article class="card">
+          <h3>SLI</h3>
+          <p>Service Level Indicator: measured reliability signal, e.g. p95 latency or error rate.</p>
+        </article>
+        <article class="card">
+          <h3>SLO</h3>
+          <p>Service Level Objective: target for each SLI, e.g. p95 &lt; 300ms, error rate &lt; 1%.</p>
+        </article>
+        <article class="card">
+          <h3>SLA</h3>
+          <p>Service Level Agreement: contractual commitment typically backed by penalties.</p>
+        </article>
+      </section>
+
+      <section class="card formulas">
+        <h3>Metric Formulas (What We Measure)</h3>
+        <div class="formula-grid">
+          <article class="formula-item">
+            <strong>p95 Latency</strong>
+            <p><code>p95 = smallest bucket b where cumulative_count(b) &gt;= 0.95 * total_count</code></p>
+          </article>
+          <article class="formula-item">
+            <strong>Error Rate (%)</strong>
+            <p><code>errorRate = 100 * delta(http_5xx_total) / delta(http_requests_total)</code></p>
+          </article>
+          <article class="formula-item">
+            <strong>Request Rate (RPS)</strong>
+            <p><code>requestRate = delta(http_requests_total) / delta(time_seconds)</code></p>
+          </article>
+          <article class="formula-item">
+            <strong>Queue Depth</strong>
+            <p><code>queueDepth = enrichment_depth + critical_depth</code></p>
+          </article>
+          <article class="formula-item">
+            <strong>Queue Lag Estimate (seconds)</strong>
+            <p><code>queueLag = queueDepth / completionRatePerSecond</code></p>
+          </article>
+          <article class="formula-item">
+            <strong>Upstream Failure Rate (%)</strong>
+            <p><code>upstreamFail = 100 * delta(upstream_failures_total) / delta(upstream_requests_total)</code></p>
+          </article>
+          <article class="formula-item">
+            <strong>Ingress Per Route (RPS)</strong>
+            <p><code>routeRps(route) = delta(route_request_count) / delta(time_seconds)</code></p>
+          </article>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top: 14px;">
+        <h3>Hybrid Architecture (Aggregator + Read Model)</h3>
+        <p id="hybridMode" class="footer">
+          Loading hybrid mode details...
+        </p>
+        <div class="formula-grid" style="margin-top: 12px;">
+          <article class="formula-item">
+            <strong>Read Model Fresh Hit %</strong>
+            <p id="hybridFreshHitPct">-</p>
+          </article>
+          <article class="formula-item">
+            <strong>Read Model Coverage % (fresh + stale)</strong>
+            <p id="hybridCoveragePct">-</p>
+          </article>
+          <article class="formula-item">
+            <strong>Catalog Cache Hit %</strong>
+            <p id="hybridCatalogHitPct">-</p>
+          </article>
+          <article class="formula-item">
+            <strong>List RPS</strong>
+            <p id="hybridDealsRps">-</p>
+          </article>
+          <article class="formula-item">
+            <strong>Classic Fan-out / Request</strong>
+            <p id="classicFanout">-</p>
+          </article>
+          <article class="formula-item">
+            <strong>Hybrid Estimated Fan-out / Request</strong>
+            <p id="hybridFanout">-</p>
+          </article>
+          <article class="formula-item">
+            <strong>Estimated Fan-out Reduction %</strong>
+            <p id="hybridReduction">-</p>
+          </article>
+          <article class="formula-item">
+            <strong>Live Fallback RPS</strong>
+            <p id="hybridFallbackRps">-</p>
+          </article>
+        </div>
+        <p id="hybridStatus" class="footer">Hybrid metrics waiting for first poll...</p>
+      </section>
+
+      <section class="metrics">
+        <article class="card">
+          <strong>p95 Latency</strong>
+          <span id="p95" class="metric-value">-</span>
+        </article>
+        <article class="card">
+          <strong>Error Rate</strong>
+          <span id="errorRate" class="metric-value">-</span>
+        </article>
+        <article class="card">
+          <strong>Queue Depth</strong>
+          <span id="queueDepth" class="metric-value">-</span>
+        </article>
+        <article class="card">
+          <strong>Queue Lag Estimate</strong>
+          <span id="queueLag" class="metric-value">-</span>
+        </article>
+        <article class="card">
+          <strong>Upstream Failure Rate</strong>
+          <span id="upstreamFail" class="metric-value">-</span>
+        </article>
+        <article class="card">
+          <strong>Request Rate</strong>
+          <span id="requestRate" class="metric-value">-</span>
+        </article>
+      </section>
+
+      <section class="slo-grid">
+        <article class="card">
+          <strong>SLO: p95 latency &lt; 300ms</strong>
+          <div id="slo-latency" class="status">-</div>
+        </article>
+        <article class="card">
+          <strong>SLO: error rate &lt; 1%</strong>
+          <div id="slo-errors" class="status">-</div>
+        </article>
+        <article class="card">
+          <strong>SLO: queue depth &lt; 1000</strong>
+          <div id="slo-queue" class="status">-</div>
+        </article>
+      </section>
+
+      <section class="card" style="margin-top: 14px;">
+        <strong>Scenarios (Toggle On/Off)</strong>
+        <p class="footer">Normal traffic is enabled by default. Activate/deactivate scenarios to compare behavior.</p>
+        <div id="scenarioButtons" class="scenario-buttons"></div>
+        <div class="scenario-details">
+          <article class="scenario-text-box">
+            <strong>Current Behavior</strong>
+            <p id="scenarioNarrative" class="footer">Loading scenario state...</p>
+            <p id="scenarioStatus" class="footer">No action yet.</p>
+          </article>
+          <article class="scenario-text-box">
+            <strong>What Is Happening Right Now</strong>
+            <ul id="scenarioExplanations" class="scenario-explanations"></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top: 14px;">
+        <strong>Service Topology (Left → Right)</strong>
+        <p class="footer">
+          Clients enter from the left, through experience-api, then fan out to services/queues/workers. Redis is used for queue state and read-model/cache hits. Rating traffic is load-balanced across two rating instances. Drag any box to reposition it.
+        </p>
+
+        <div class="topology-controls">
+          <div class="control-group">
+            <label for="colorMode">Color mode</label>
+            <select id="colorMode">
+              <option value="auto">Auto severity colors</option>
+              <option value="manual">Manual palette override</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="paletteSelect">Manual palette</label>
+            <select id="paletteSelect">
+              <option value="classic">Classic</option>
+              <option value="ocean">Ocean</option>
+              <option value="sunset">Sunset</option>
+              <option value="mono">Monochrome</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="colorOk">OK color</label>
+            <input id="colorOk" type="color" value="#2b9348" />
+          </div>
+          <div class="control-group">
+            <label for="colorWarn">Warn color</label>
+            <input id="colorWarn" type="color" value="#ff9f1c" />
+          </div>
+          <div class="control-group">
+            <label for="colorCritical">Critical color</label>
+            <input id="colorCritical" type="color" value="#d62828" />
+          </div>
+          <div class="control-group">
+            <label for="colorUnknown">Unknown color</label>
+            <input id="colorUnknown" type="color" value="#7b8794" />
+          </div>
+        </div>
+
+        <div id="severityLegend" class="legend"></div>
+
+        <div id="ingressRates" class="ingress-grid"></div>
+
+        <svg id="topologySvg" viewBox="0 0 1320 920" preserveAspectRatio="xMidYMid meet" role="img"></svg>
+        <p id="topologyStatus" class="footer">Topology waiting for first data poll...</p>
+      </section>
+
+      <section class="charts">
+        <article class="card">
+          <h3>Latency Trend (p95 ms)</h3>
+          <canvas id="latencyChart"></canvas>
+        </article>
+        <article class="card">
+          <h3>Error Rate Trend (%)</h3>
+          <canvas id="errorChart"></canvas>
+        </article>
+        <article class="card">
+          <h3>Queue Depth Trend</h3>
+          <canvas id="queueChart"></canvas>
+        </article>
+      </section>
+
+      <p class="footer" id="lastUpdated">Last update: -</p>
+    </div>
+
+    <script src="/chart.js"></script>
+    <script>
+      const labels = [];
+      const latencySeries = [];
+      const errorSeries = [];
+      const queueSeries = [];
+      const MAX_POINTS = 80;
+
+      const TOPOLOGY_COLOR_STORAGE_KEY = "dep-topology-color-settings-v1";
+      const TOPOLOGY_LAYOUT_STORAGE_KEY = "dep-topology-layout-v1";
+      const TOPOLOGY_VIEWBOX = { minX: 0, minY: 0, width: 1320, height: 920 };
+      const AUTO_COLORS = {
+        ok: "#2b9348",
+        warn: "#ff9f1c",
+        critical: "#d62828",
+        unknown: "#7b8794"
+      };
+
+      const PALETTES = {
+        classic: {
+          ok: "#2b9348",
+          warn: "#ff9f1c",
+          critical: "#d62828",
+          unknown: "#7b8794"
+        },
+        ocean: {
+          ok: "#0c8b75",
+          warn: "#f0ad00",
+          critical: "#d1495b",
+          unknown: "#607080"
+        },
+        sunset: {
+          ok: "#3a9d23",
+          warn: "#f58f29",
+          critical: "#da2c38",
+          unknown: "#747a8a"
+        },
+        mono: {
+          ok: "#2f4858",
+          warn: "#55697a",
+          critical: "#1f1f1f",
+          unknown: "#9298a1"
+        }
+      };
+
+      const ingressLabelMap = {
+        dealsList: "GET /api/deals",
+        dealDetail: "GET /api/deals/:id",
+        purchase: "POST /api/purchase",
+        enqueue: "POST /api/enrichment-jobs",
+        hashBad: "POST /api/heavy-hash/bad",
+        hashGood: "POST /api/heavy-hash/good"
+      };
+
+      const defaultNodeLayout = {
+        "client-ingress": { x: 22, y: 360, w: 215, h: 170 },
+        "experience-api": { x: 280, y: 350, w: 255, h: 180 },
+        "deal-service": { x: 580, y: 60, w: 210, h: 120 },
+        "price-service": { x: 580, y: 205, w: 210, h: 120 },
+        "inventory-service": { x: 580, y: 350, w: 210, h: 120 },
+        "merchant-service": { x: 580, y: 495, w: 210, h: 120 },
+        "enrichment-queue": { x: 580, y: 650, w: 230, h: 120 },
+        "critical-queue": { x: 580, y: 790, w: 230, h: 110 },
+        "rating-lb": { x: 860, y: 330, w: 205, h: 145 },
+        "rating-service-a": { x: 1095, y: 230, w: 205, h: 125 },
+        "rating-service-b": { x: 1095, y: 410, w: 205, h: 125 },
+        "enrichment-worker": { x: 860, y: 620, w: 205, h: 130 },
+        "critical-worker": { x: 860, y: 775, w: 205, h: 125 },
+        redis: { x: 1095, y: 670, w: 205, h: 150 }
+      };
+
+      function cloneDefaultNodeLayout() {
+        return Object.fromEntries(
+          Object.entries(defaultNodeLayout).map(([id, layout]) => [id, { ...layout }])
+        );
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function loadNodeLayout() {
+        const layout = cloneDefaultNodeLayout();
+
+        try {
+          const raw = localStorage.getItem(TOPOLOGY_LAYOUT_STORAGE_KEY);
+          if (!raw) {
+            return layout;
+          }
+
+          const parsed = JSON.parse(raw);
+          for (const [id, saved] of Object.entries(parsed || {})) {
+            const existing = layout[id];
+            if (!existing) {
+              continue;
+            }
+
+            const maxX = TOPOLOGY_VIEWBOX.width - existing.w;
+            const maxY = TOPOLOGY_VIEWBOX.height - existing.h;
+            const nextX = Number(saved?.x);
+            const nextY = Number(saved?.y);
+
+            if (Number.isFinite(nextX)) {
+              existing.x = clamp(nextX, TOPOLOGY_VIEWBOX.minX, maxX);
+            }
+
+            if (Number.isFinite(nextY)) {
+              existing.y = clamp(nextY, TOPOLOGY_VIEWBOX.minY, maxY);
+            }
+          }
+        } catch (_error) {
+          return layout;
+        }
+
+        return layout;
+      }
+
+      function saveNodeLayout() {
+        const toPersist = {};
+        for (const [id, layout] of Object.entries(nodeLayout)) {
+          toPersist[id] = {
+            x: Number(layout.x),
+            y: Number(layout.y)
+          };
+        }
+
+        localStorage.setItem(TOPOLOGY_LAYOUT_STORAGE_KEY, JSON.stringify(toPersist));
+      }
+
+      let nodeLayout = loadNodeLayout();
+      let lastTopologyPayload = null;
+      let scenarioSnapshot = null;
+      const pendingScenarioChanges = new Set();
+      let dragState = null;
+      let dragRenderQueued = false;
+
+      function defaultColorSettings() {
+        return {
+          mode: "auto",
+          palette: "classic",
+          manualColors: { ...PALETTES.classic }
+        };
+      }
+
+      function loadColorSettings() {
+        try {
+          const raw = localStorage.getItem(TOPOLOGY_COLOR_STORAGE_KEY);
+          if (!raw) {
+            return defaultColorSettings();
+          }
+
+          const parsed = JSON.parse(raw);
+          const mode = parsed.mode === "manual" ? "manual" : "auto";
+          const palette = PALETTES[parsed.palette] ? parsed.palette : "classic";
+          const manualColors = {
+            ...PALETTES[palette],
+            ...(parsed.manualColors || {})
+          };
+
+          return { mode, palette, manualColors };
+        } catch (_error) {
+          return defaultColorSettings();
+        }
+      }
+
+      function saveColorSettings() {
+        localStorage.setItem(TOPOLOGY_COLOR_STORAGE_KEY, JSON.stringify(colorSettings));
+      }
+
+      const colorSettings = loadColorSettings();
+
+      function hexToRgba(hex, alpha) {
+        const clean = hex.replace("#", "");
+        const full =
+          clean.length === 3
+            ? `${clean[0]}${clean[0]}${clean[1]}${clean[1]}${clean[2]}${clean[2]}`
+            : clean;
+
+        const r = parseInt(full.slice(0, 2), 16);
+        const g = parseInt(full.slice(2, 4), 16);
+        const b = parseInt(full.slice(4, 6), 16);
+
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
+      function activeSeverityColors() {
+        if (colorSettings.mode === "auto") {
+          return AUTO_COLORS;
+        }
+
+        return colorSettings.manualColors;
+      }
+
+      function syncColorControls() {
+        const mode = colorSettings.mode;
+
+        document.getElementById("colorMode").value = mode;
+        document.getElementById("paletteSelect").value = colorSettings.palette;
+        document.getElementById("colorOk").value = colorSettings.manualColors.ok;
+        document.getElementById("colorWarn").value = colorSettings.manualColors.warn;
+        document.getElementById("colorCritical").value = colorSettings.manualColors.critical;
+        document.getElementById("colorUnknown").value = colorSettings.manualColors.unknown;
+
+        const disabled = mode === "auto";
+        document.getElementById("paletteSelect").disabled = disabled;
+        document.getElementById("colorOk").disabled = disabled;
+        document.getElementById("colorWarn").disabled = disabled;
+        document.getElementById("colorCritical").disabled = disabled;
+        document.getElementById("colorUnknown").disabled = disabled;
+      }
+
+      function renderLegend() {
+        const colors = activeSeverityColors();
+        const legend = document.getElementById("severityLegend");
+        legend.innerHTML = "";
+
+        for (const severity of ["ok", "warn", "critical", "unknown"]) {
+          const item = document.createElement("span");
+          item.className = "legend-item";
+
+          const swatch = document.createElement("span");
+          swatch.className = "legend-swatch";
+          swatch.style.background = colors[severity];
+
+          const label = document.createElement("span");
+          label.textContent = severity;
+
+          item.appendChild(swatch);
+          item.appendChild(label);
+          legend.appendChild(item);
+        }
+      }
+
+      function toSvgPoint(svg, clientX, clientY) {
+        if (!svg) {
+          return null;
+        }
+
+        const point = svg.createSVGPoint();
+        point.x = clientX;
+        point.y = clientY;
+
+        const matrix = svg.getScreenCTM();
+        if (!matrix) {
+          return null;
+        }
+
+        return point.matrixTransform(matrix.inverse());
+      }
+
+      function queueTopologyRender() {
+        if (dragRenderQueued) {
+          return;
+        }
+
+        dragRenderQueued = true;
+        requestAnimationFrame(() => {
+          dragRenderQueued = false;
+          if (lastTopologyPayload) {
+            renderTopology(lastTopologyPayload);
+          }
+        });
+      }
+
+      function beginNodeDrag(event, nodeId) {
+        if (event.button !== 0) {
+          return;
+        }
+
+        const svg = document.getElementById("topologySvg");
+        const point = toSvgPoint(svg, event.clientX, event.clientY);
+        const layout = nodeLayout[nodeId];
+        if (!point || !layout) {
+          return;
+        }
+
+        dragState = {
+          nodeId,
+          offsetX: point.x - layout.x,
+          offsetY: point.y - layout.y
+        };
+
+        event.preventDefault();
+      }
+
+      function handleNodeDragMove(event) {
+        if (!dragState) {
+          return;
+        }
+
+        const svg = document.getElementById("topologySvg");
+        const point = toSvgPoint(svg, event.clientX, event.clientY);
+        const layout = nodeLayout[dragState.nodeId];
+        if (!point || !layout) {
+          return;
+        }
+
+        const maxX = TOPOLOGY_VIEWBOX.width - layout.w;
+        const maxY = TOPOLOGY_VIEWBOX.height - layout.h;
+
+        layout.x = clamp(point.x - dragState.offsetX, TOPOLOGY_VIEWBOX.minX, maxX);
+        layout.y = clamp(point.y - dragState.offsetY, TOPOLOGY_VIEWBOX.minY, maxY);
+
+        queueTopologyRender();
+      }
+
+      function endNodeDrag() {
+        if (!dragState) {
+          return;
+        }
+
+        dragState = null;
+        saveNodeLayout();
+      }
+
+      function pushPoint(label, latency, error, queue) {
+        labels.push(label);
+        latencySeries.push(latency);
+        errorSeries.push(error);
+        queueSeries.push(queue);
+
+        if (labels.length > MAX_POINTS) {
+          labels.shift();
+          latencySeries.shift();
+          errorSeries.shift();
+          queueSeries.shift();
+        }
+      }
+
+      const latencyChart = new Chart(document.getElementById("latencyChart"), {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "p95 latency (ms)",
+              data: latencySeries,
+              borderColor: "#0b7285",
+              backgroundColor: "rgba(11, 114, 133, 0.12)",
+              borderWidth: 2,
+              tension: 0.2,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          animation: false,
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+
+      const errorChart = new Chart(document.getElementById("errorChart"), {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "error rate (%)",
+              data: errorSeries,
+              borderColor: "#d62828",
+              backgroundColor: "rgba(214, 40, 40, 0.12)",
+              borderWidth: 2,
+              tension: 0.2,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          animation: false,
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+
+      const queueChart = new Chart(document.getElementById("queueChart"), {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "queue depth",
+              data: queueSeries,
+              borderColor: "#ff9f1c",
+              backgroundColor: "rgba(255, 159, 28, 0.18)",
+              borderWidth: 2,
+              tension: 0.2,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          animation: false,
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+
+      function fmt(value, digits = 2) {
+        if (!Number.isFinite(value)) {
+          return "inf";
+        }
+
+        return Number(value).toFixed(digits);
+      }
+
+      function formatMetricValue(value) {
+        if (typeof value === "boolean") {
+          return value ? "yes" : "no";
+        }
+
+        if (typeof value === "string") {
+          return value;
+        }
+
+        if (value === null || value === undefined) {
+          return "-";
+        }
+
+        if (!Number.isFinite(value)) {
+          return "inf";
+        }
+
+        return Number(value).toFixed(2);
+      }
+
+      function statusText(status) {
+        if (status === "up") return "UP";
+        if (status === "degraded") return "DEGRADED";
+        if (status === "down") return "DOWN";
+        return "UNKNOWN";
+      }
+
+      function metricSummaryFromEdge(edge) {
+        const metrics = edge.metrics || {};
+
+        if (edge.id === "client->experience") {
+          return `in ${formatMetricValue(metrics.totalIngressRps)} rps`;
+        }
+
+        if (edge.id === "experience->redis") {
+          return `rm hit ${formatMetricValue(metrics.readModelHitPct)}% | base hit ${formatMetricValue(
+            metrics.catalogCacheHitPct
+          )}%`;
+        }
+
+        if (edge.id.startsWith("experience->") && metrics.p95LatencyMs !== undefined) {
+          return `rps ${formatMetricValue(metrics.requestRateRps)} | p95 ${formatMetricValue(
+            metrics.p95LatencyMs
+          )}ms | fail ${formatMetricValue(
+            metrics.failureRatePct
+          )}%`;
+        }
+
+        if (edge.id.includes("queue") && metrics.depth !== undefined) {
+          return `depth ${formatMetricValue(metrics.depth)} | lag ${formatMetricValue(
+            metrics.lagEstimateSec
+          )}s`;
+        }
+
+        if (edge.id.includes("worker") && metrics.queueDepth !== undefined) {
+          return `qDepth ${formatMetricValue(metrics.queueDepth)} | fail ${formatMetricValue(
+            metrics.failureRatePct
+          )}%`;
+        }
+
+        if (edge.id.startsWith("rating-lb->")) {
+          return `rps ${formatMetricValue(metrics.requestRateRps)} | fail ${formatMetricValue(
+            metrics.failureRatePct
+          )}%`;
+        }
+
+        if (metrics.ready !== undefined) {
+          return `ready ${formatMetricValue(metrics.ready)} | qDepth ${formatMetricValue(
+            metrics.totalQueueDepth
+          )}`;
+        }
+
+        return "";
+      }
+
+      function metricLinesForNode(node) {
+        const m = node.metrics || {};
+
+        if (node.id === "client-ingress") {
+          const lines = [`total in: ${formatMetricValue(m.totalIngressRps)} rps`];
+          const routeRates = m.requestTypeRps || {};
+
+          for (const key of Object.keys(routeRates)) {
+            lines.push(`${ingressLabelMap[key] || key}: ${formatMetricValue(routeRates[key])}`);
+            if (lines.length >= 6) {
+              break;
+            }
+          }
+
+          return lines;
+        }
+
+        if (node.id === "experience-api") {
+          return [
+            `p95: ${formatMetricValue(m.p95LatencyMs)}ms`,
+            `fail: ${formatMetricValue(m.errorRatePct)}%`,
+            `rps: ${formatMetricValue(m.requestRateRps)}`
+          ];
+        }
+
+        if (node.id === "rating-lb") {
+          return [
+            `p95: ${formatMetricValue(m.p95LatencyMs)}ms`,
+            `fail: ${formatMetricValue(m.failureRatePct)}%`,
+            `upstream rps: ${formatMetricValue(m.requestRateRps)}`,
+            `lb rps: ${formatMetricValue(m.lbRequestRateRps)}`
+          ];
+        }
+
+        if (node.type === "service") {
+          return [
+            `p95/rate: ${formatMetricValue(m.p95LatencyMs)}ms`,
+            `fail: ${formatMetricValue(m.failureRatePct)}%`,
+            `rps: ${formatMetricValue(m.requestRateRps)}`,
+            `healthy: ${formatMetricValue(m.healthy)}`
+          ];
+        }
+
+        if (node.type === "queue") {
+          return [
+            `depth: ${formatMetricValue(m.depth)}`,
+            `lag: ${formatMetricValue(m.lagEstimateSec)}s`,
+            `comp/s: ${formatMetricValue(m.completionRate)}`
+          ];
+        }
+
+        if (node.type === "worker") {
+          return [
+            `queue: ${formatMetricValue(m.queue)}`,
+            `comp/s: ${formatMetricValue(m.completionRate)}`,
+            `fail: ${formatMetricValue(m.failureRatePct)}%`
+          ];
+        }
+
+        if (node.id === "redis") {
+          return [
+            `ready: ${formatMetricValue(m.ready)}`,
+            `queueDepth: ${formatMetricValue(m.totalQueueDepth)}`,
+            `read-model hit: ${formatMetricValue(m.readModelHitPct)}%`,
+            `base cache hit: ${formatMetricValue(m.catalogCacheHitPct)}%`,
+            `rm hits/miss: ${formatMetricValue(m.readModelHits)} / ${formatMetricValue(m.readModelMisses)}`
+          ];
+        }
+
+        return [];
+      }
+
+      function renderIngressRates(ingress) {
+        const container = document.getElementById("ingressRates");
+        container.innerHTML = "";
+
+        const total = document.createElement("div");
+        total.className = "ingress-item";
+        total.innerHTML = `<strong>Total ingress</strong><div>${formatMetricValue(ingress?.totalRps)} rps</div>`;
+        container.appendChild(total);
+
+        const byType = ingress?.byType || {};
+        for (const key of Object.keys(ingressLabelMap)) {
+          const item = document.createElement("div");
+          item.className = "ingress-item";
+          item.innerHTML = `<strong>${ingressLabelMap[key]}</strong><div>${formatMetricValue(byType[key])} rps</div>`;
+          container.appendChild(item);
+        }
+      }
+
+      function renderTopology(payload) {
+        lastTopologyPayload = payload;
+
+        const svg = document.getElementById("topologySvg");
+        const colors = activeSeverityColors();
+        svg.innerHTML = "";
+
+        const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+        marker.setAttribute("id", "arrowHead");
+        marker.setAttribute("viewBox", "0 0 10 10");
+        marker.setAttribute("refX", "8");
+        marker.setAttribute("refY", "5");
+        marker.setAttribute("markerWidth", "6");
+        marker.setAttribute("markerHeight", "6");
+        marker.setAttribute("orient", "auto-start-reverse");
+
+        const arrowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        arrowPath.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+        arrowPath.setAttribute("fill", "#7b8794");
+        marker.appendChild(arrowPath);
+        defs.appendChild(marker);
+        svg.appendChild(defs);
+
+        const edgeLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const nodeLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+
+        for (const edge of payload.edges || []) {
+          const fromLayout = nodeLayout[edge.from];
+          const toLayout = nodeLayout[edge.to];
+
+          if (!fromLayout || !toLayout) {
+            continue;
+          }
+
+          const forward = toLayout.x >= fromLayout.x;
+          const fromX = forward ? fromLayout.x + fromLayout.w : fromLayout.x;
+          const toX = forward ? toLayout.x : toLayout.x + toLayout.w;
+          const fromY = fromLayout.y + fromLayout.h / 2;
+          const toY = toLayout.y + toLayout.h / 2;
+          const midX = (fromX + toX) / 2;
+
+          const edgeColor = colors[edge.severity] || colors.unknown;
+
+          const curve = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          curve.setAttribute(
+            "d",
+            `M ${fromX} ${fromY} C ${midX} ${fromY}, ${midX} ${toY}, ${toX} ${toY}`
+          );
+          curve.setAttribute("fill", "none");
+          curve.setAttribute("stroke", edgeColor);
+          curve.setAttribute("stroke-width", "2");
+          curve.setAttribute("opacity", "0.88");
+          curve.setAttribute("marker-end", "url(#arrowHead)");
+          edgeLayer.appendChild(curve);
+
+          const label = metricSummaryFromEdge(edge);
+          if (label) {
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", String(midX));
+            text.setAttribute("y", String((fromY + toY) / 2 - 6));
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("font-size", "10");
+            text.setAttribute("fill", "#415a77");
+            text.textContent = label;
+            edgeLayer.appendChild(text);
+          }
+        }
+
+        for (const [index, node] of (payload.nodes || []).entries()) {
+          const fallback = {
+            x: 20 + (index % 5) * 250,
+            y: 20 + Math.floor(index / 5) * 130,
+            w: 200,
+            h: 110
+          };
+
+          const layout = nodeLayout[node.id] || fallback;
+          const color = colors[node.severity] || colors.unknown;
+
+          const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          group.setAttribute("transform", `translate(${layout.x}, ${layout.y})`);
+          group.style.cursor = dragState?.nodeId === node.id ? "grabbing" : "grab";
+          group.style.touchAction = "none";
+          group.addEventListener("pointerdown", (event) => {
+            beginNodeDrag(event, node.id);
+          });
+
+          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+          rect.setAttribute("x", "0");
+          rect.setAttribute("y", "0");
+          rect.setAttribute("rx", "12");
+          rect.setAttribute("ry", "12");
+          rect.setAttribute("width", String(layout.w));
+          rect.setAttribute("height", String(layout.h));
+          rect.setAttribute("fill", hexToRgba(color, 0.12));
+          rect.setAttribute("stroke", color);
+          rect.setAttribute("stroke-width", "2");
+          group.appendChild(rect);
+
+          const title = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          title.setAttribute("x", "10");
+          title.setAttribute("y", "20");
+          title.setAttribute("font-size", "13");
+          title.setAttribute("font-weight", "700");
+          title.setAttribute("fill", "#12263a");
+          title.textContent = node.label;
+          group.appendChild(title);
+
+          const statusNode = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          statusNode.setAttribute("x", "10");
+          statusNode.setAttribute("y", "36");
+          statusNode.setAttribute("font-size", "11");
+          statusNode.setAttribute("font-weight", "700");
+          statusNode.setAttribute("fill", color);
+          statusNode.textContent = `${statusText(node.status)} | ${node.severity.toUpperCase()}`;
+          group.appendChild(statusNode);
+
+          const lines = metricLinesForNode(node);
+          for (const [lineIndex, lineText] of lines.entries()) {
+            const metricText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            metricText.setAttribute("x", "10");
+            metricText.setAttribute("y", String(56 + lineIndex * 15));
+            metricText.setAttribute("font-size", "11");
+            metricText.setAttribute("fill", "#334e68");
+            metricText.textContent = lineText;
+            group.appendChild(metricText);
+          }
+
+          nodeLayer.appendChild(group);
+        }
+
+        svg.appendChild(edgeLayer);
+        svg.appendChild(nodeLayer);
+
+        renderIngressRates(payload.ingress || {});
+
+        document.getElementById("topologyStatus").textContent = `Topology updated: ${new Date(
+          payload.timestamp
+        ).toLocaleTimeString()}`;
+      }
+
+      function renderStatus(el, pass) {
+        el.textContent = pass ? "PASS" : "FAIL";
+        el.className = `status ${pass ? "pass" : "fail"}`;
+      }
+
+      function renderScenarios(snapshot) {
+        scenarioSnapshot = snapshot;
+
+        const buttons = document.getElementById("scenarioButtons");
+        buttons.innerHTML = "";
+
+        for (const scenario of snapshot.scenarios || []) {
+          const btn = document.createElement("button");
+          btn.className = `scenario-btn ${scenario.active ? "active" : ""} ${
+            pendingScenarioChanges.has(scenario.id) ? "pending" : ""
+          }`;
+          btn.textContent = `${scenario.active ? "Deactivate" : "Activate"} ${scenario.label}`;
+          btn.disabled = pendingScenarioChanges.has(scenario.id);
+
+          btn.addEventListener("click", () => {
+            toggleScenario(scenario.id, !scenario.active);
+          });
+
+          buttons.appendChild(btn);
+        }
+
+        document.getElementById("scenarioNarrative").textContent = snapshot.activeNarrative;
+
+        const list = document.getElementById("scenarioExplanations");
+        list.innerHTML = "";
+
+        const activeScenarios = (snapshot.scenarios || []).filter((scenario) => scenario.active);
+        if (activeScenarios.length === 0) {
+          const li = document.createElement("li");
+          li.textContent = "No automated scenario is active. Toggle one to observe a reliability pattern.";
+          list.appendChild(li);
+          return;
+        }
+
+        for (const scenario of activeScenarios) {
+          const li = document.createElement("li");
+          const outcome = scenario.lastOutcome?.details ? ` Last run: ${scenario.lastOutcome.details}` : "";
+          li.textContent = `${scenario.label}: ${scenario.explanation}${outcome}`;
+          list.appendChild(li);
+        }
+      }
+
+      function renderHybrid(payload) {
+        document.getElementById("hybridMode").textContent = payload?.architecture?.summary || "-";
+
+        document.getElementById("hybridFreshHitPct").textContent = `${formatMetricValue(
+          payload?.readModel?.freshHitPct
+        )}%`;
+        document.getElementById("hybridCoveragePct").textContent = `${formatMetricValue(
+          payload?.readModel?.coveragePct
+        )}%`;
+        document.getElementById("hybridCatalogHitPct").textContent = `${formatMetricValue(
+          payload?.catalogCache?.hitPct
+        )}%`;
+        document.getElementById("hybridDealsRps").textContent = `${formatMetricValue(
+          payload?.listTraffic?.dealsListRps
+        )} rps`;
+        document.getElementById("classicFanout").textContent = formatMetricValue(
+          payload?.fanout?.classicPerRequest
+        );
+        document.getElementById("hybridFanout").textContent = formatMetricValue(
+          payload?.fanout?.hybridPerRequestEstimate
+        );
+        document.getElementById("hybridReduction").textContent = `${formatMetricValue(
+          payload?.fanout?.reductionPct
+        )}%`;
+        document.getElementById("hybridFallbackRps").textContent = `${formatMetricValue(
+          payload?.readModel?.rates?.liveFallbackRps
+        )} rps`;
+
+        document.getElementById("hybridStatus").textContent = `Hybrid metrics updated: ${new Date(
+          payload.timestamp
+        ).toLocaleTimeString()}`;
+      }
+
+      async function pollSli() {
+        const response = await fetch("/api/sli", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`SLI request failed: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const sli = payload.sli;
+        const slo = payload.slo;
+
+        document.getElementById("p95").textContent = `${fmt(sli.p95LatencyMs, 1)} ms`;
+        document.getElementById("errorRate").textContent = `${fmt(sli.errorRatePct, 2)} %`;
+        document.getElementById("queueDepth").textContent = `${Math.round(sli.queueDepth)}`;
+        document.getElementById("queueLag").textContent = `${fmt(sli.queueLagEstimateSeconds, 1)} s`;
+        document.getElementById("upstreamFail").textContent = `${fmt(sli.upstreamFailureRatePct, 2)} %`;
+        document.getElementById("requestRate").textContent = `${fmt(sli.requestRate, 1)} rps`;
+
+        renderStatus(document.getElementById("slo-latency"), slo.status.p95Latency);
+        renderStatus(document.getElementById("slo-errors"), slo.status.errorRate);
+        renderStatus(document.getElementById("slo-queue"), slo.status.queueDepth);
+
+        const label = new Date(sli.timestamp).toLocaleTimeString();
+        pushPoint(label, sli.p95LatencyMs, sli.errorRatePct, sli.queueDepth);
+
+        latencyChart.update();
+        errorChart.update();
+        queueChart.update();
+
+        document.getElementById("lastUpdated").textContent = `Last update: ${new Date(
+          sli.timestamp
+        ).toLocaleTimeString()}`;
+      }
+
+      async function pollTopology() {
+        const response = await fetch("/api/topology", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Topology request failed: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        renderTopology(payload);
+      }
+
+      async function pollScenarios() {
+        const response = await fetch("/api/scenarios", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Scenarios request failed: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        renderScenarios(payload);
+      }
+
+      async function pollHybrid() {
+        const response = await fetch("/api/hybrid", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Hybrid request failed: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        renderHybrid(payload);
+      }
+
+      async function toggleScenario(name, active) {
+        const status = document.getElementById("scenarioStatus");
+        pendingScenarioChanges.add(name);
+
+        if (scenarioSnapshot) {
+          renderScenarios(scenarioSnapshot);
+        }
+
+        status.textContent = `${active ? "Activating" : "Deactivating"} ${name}...`;
+
+        try {
+          const response = await fetch(`/api/scenario/${name}`, {
+            method: "POST",
+            headers: {
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({ active })
+          });
+
+          if (!response.ok) {
+            throw new Error(`scenario toggle failed (${response.status})`);
+          }
+
+          const payload = await response.json();
+          renderScenarios(payload);
+          status.textContent = `${name} is now ${payload.active ? "active" : "inactive"}.`;
+        } catch (error) {
+          status.textContent = `Scenario error (${name}): ${error.message}`;
+        } finally {
+          pendingScenarioChanges.delete(name);
+          if (scenarioSnapshot) {
+            renderScenarios(scenarioSnapshot);
+          }
+        }
+      }
+
+      async function pollDashboard() {
+        const results = await Promise.allSettled([pollSli(), pollTopology(), pollScenarios(), pollHybrid()]);
+
+        if (results[0].status === "rejected") {
+          document.getElementById("lastUpdated").textContent = `Last update failed: ${results[0].reason.message}`;
+        }
+
+        if (results[1].status === "rejected") {
+          document.getElementById("topologyStatus").textContent = `Topology update failed: ${results[1].reason.message}`;
+        }
+
+        if (results[2].status === "rejected") {
+          document.getElementById("scenarioStatus").textContent = `Scenario state failed: ${results[2].reason.message}`;
+        }
+
+        if (results[3].status === "rejected") {
+          document.getElementById("hybridStatus").textContent = `Hybrid metrics failed: ${results[3].reason.message}`;
+        }
+      }
+
+      document.getElementById("colorMode").addEventListener("change", (event) => {
+        colorSettings.mode = event.target.value === "manual" ? "manual" : "auto";
+        saveColorSettings();
+        syncColorControls();
+        renderLegend();
+        if (lastTopologyPayload) {
+          renderTopology(lastTopologyPayload);
+        }
+      });
+
+      document.getElementById("paletteSelect").addEventListener("change", (event) => {
+        colorSettings.palette = event.target.value;
+        colorSettings.manualColors = { ...PALETTES[colorSettings.palette] };
+        saveColorSettings();
+        syncColorControls();
+        renderLegend();
+        if (lastTopologyPayload) {
+          renderTopology(lastTopologyPayload);
+        }
+      });
+
+      function bindManualColorInput(id, key) {
+        document.getElementById(id).addEventListener("input", (event) => {
+          colorSettings.manualColors[key] = event.target.value;
+          saveColorSettings();
+          renderLegend();
+          if (lastTopologyPayload) {
+            renderTopology(lastTopologyPayload);
+          }
+        });
+      }
+
+      bindManualColorInput("colorOk", "ok");
+      bindManualColorInput("colorWarn", "warn");
+      bindManualColorInput("colorCritical", "critical");
+      bindManualColorInput("colorUnknown", "unknown");
+
+      window.addEventListener("pointermove", handleNodeDragMove);
+      window.addEventListener("pointerup", endNodeDrag);
+      window.addEventListener("pointercancel", endNodeDrag);
+      window.addEventListener("blur", endNodeDrag);
+
+      syncColorControls();
+      renderLegend();
+      pollDashboard();
+      setInterval(pollDashboard, 2000);
+    </script>
+  </body>
+</html>

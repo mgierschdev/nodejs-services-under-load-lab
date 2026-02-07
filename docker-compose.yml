@@ -1,0 +1,155 @@
+name: nodejs-services-under-load-lab
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+
+  deal-service:
+    build: .
+    command: ["node", "services/deal-service/server.js"]
+    environment:
+      - PORT=3001
+    ports:
+      - "3001:3001"
+
+  price-service:
+    build: .
+    command: ["node", "services/price-service/server.js"]
+    environment:
+      - PORT=3002
+    ports:
+      - "3002:3002"
+
+  inventory-service:
+    build: .
+    command: ["node", "services/inventory-service/server.js"]
+    environment:
+      - PORT=3003
+    ports:
+      - "3003:3003"
+
+  rating-service-a:
+    build: .
+    command: ["node", "services/rating-service/server.js"]
+    environment:
+      - PORT=3004
+      - INSTANCE_ID=a
+    ports:
+      - "3004:3004"
+
+  rating-service-b:
+    build: .
+    command: ["node", "services/rating-service/server.js"]
+    environment:
+      - PORT=3006
+      - INSTANCE_ID=b
+    ports:
+      - "3006:3006"
+
+  rating-lb:
+    build: .
+    command: ["node", "services/rating-lb/server.js"]
+    environment:
+      - PORT=3014
+      - LB_TARGETS=http://rating-service-a:3004,http://rating-service-b:3006
+    ports:
+      - "3014:3014"
+    depends_on:
+      - rating-service-a
+      - rating-service-b
+
+  merchant-service:
+    build: .
+    command: ["node", "services/merchant-service/server.js"]
+    environment:
+      - PORT=3005
+    ports:
+      - "3005:3005"
+
+  experience-api:
+    build: .
+    command: ["node", "services/experience-api/server.js"]
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - DEAL_SERVICE_URL=http://deal-service:3001
+      - PRICE_SERVICE_URL=http://price-service:3002
+      - INVENTORY_SERVICE_URL=http://inventory-service:3003
+      - RATING_SERVICE_URL=http://rating-lb:3014
+      - MERCHANT_SERVICE_URL=http://merchant-service:3005
+      - ENRICHMENT_CONCURRENCY=220
+      - ENRICHMENT_QUEUE_THRESHOLD=1000
+      - HYBRID_READ_MODEL_ENABLED=true
+      - READ_MODEL_STALE_MS=180000
+      - READ_MODEL_TTL_SECONDS=300
+      - READ_MODEL_LIVE_FALLBACK_MAX=1
+      - READ_MODEL_REFRESH_COOLDOWN_MS=10000
+      - BASE_DEALS_CACHE_TTL_MS=5000
+      - OTEL_SERVICE_NAME=experience-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - deal-service
+      - price-service
+      - inventory-service
+      - rating-lb
+      - merchant-service
+
+  enrichment-worker:
+    build: .
+    command: ["node", "workers/enrichment-worker.js"]
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DEAL_SERVICE_URL=http://deal-service:3001
+      - PRICE_SERVICE_URL=http://price-service:3002
+      - INVENTORY_SERVICE_URL=http://inventory-service:3003
+      - RATING_SERVICE_URL=http://rating-lb:3014
+      - MERCHANT_SERVICE_URL=http://merchant-service:3005
+      - ENRICHMENT_WORKER_CONCURRENCY=120
+      - READ_MODEL_TTL_SECONDS=300
+      - OTEL_SERVICE_NAME=enrichment-worker
+    depends_on:
+      - redis
+      - deal-service
+      - price-service
+      - inventory-service
+      - rating-lb
+      - merchant-service
+
+  critical-worker:
+    build: .
+    command: ["node", "workers/critical-worker.js"]
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - CRITICAL_WORKER_CONCURRENCY=30
+      - OTEL_SERVICE_NAME=critical-worker
+    depends_on:
+      - redis
+
+  slo-dashboard:
+    build: .
+    command: ["node", "services/slo-dashboard/server.js"]
+    environment:
+      - PORT=3100
+      - EXPERIENCE_METRICS_URL=http://experience-api:3000/metrics
+      - EXPERIENCE_API_URL=http://experience-api:3000
+      - RATING_LB_STATS_URL=http://rating-lb:3014/stats
+      - HYBRID_ASSUMED_LIMIT=20
+      - OTEL_SERVICE_NAME=slo-dashboard
+    ports:
+      - "3100:3100"
+    depends_on:
+      - experience-api
+      - rating-lb
