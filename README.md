@@ -13,6 +13,9 @@ A complete local microservices learning platform that simulates a Groupon-like "
 
 All application code is JavaScript for Node 20+.
 
+
+![Service Graph Live](output/playwright/graph-gif/service-graph-live.gif)
+
 ## Architecture
 
 ### Services
